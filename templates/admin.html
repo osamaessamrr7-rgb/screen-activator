@@ -1,0 +1,282 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تجميع وتفعيل الأكواد</title>
+    <link rel="stylesheet" href="/static/css/portal.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .admin-box {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .codes-textarea {
+            width: 100%;
+            height: 240px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 17px;
+            font-weight: 700;
+            line-height: 1.6;
+            color: #00f2fe;
+            background: rgba(10, 15, 28, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            outline: none;
+            direction: ltr;
+            white-space: pre;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+            resize: vertical;
+        }
+        .codes-textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+        .counter-badge {
+            font-size: 32px;
+            font-weight: 900;
+            color: #00d2ff;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <a href="/admin" class="brand">
+            <div class="brand-icon">
+                <i class="fa-solid fa-list-check"></i>
+            </div>
+            <div class="brand-text">
+                <h1>لوحة تجميع وتفعيل الأكواد</h1>
+                <p>Batch Screen Activations Dashboard</p>
+            </div>
+        </a>
+
+        <div class="nav-links">
+            <a href="/" target="_blank" class="nav-btn nav-btn-primary" style="font-size: 13px;">
+                <i class="fa-solid fa-up-right-from-square"></i>
+                فتح رابط الزبائن
+            </a>
+        </div>
+    </header>
+
+    <div class="admin-box">
+        <!-- Top Stats Card -->
+        <div class="glass-container" style="padding: 22px 28px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 4px;">الأكواد المجمعة الجاهزة للتفعيل:</p>
+                <div class="counter-badge">
+                    <span id="codesCount">0</span> <span style="font-size: 16px; color: var(--text-muted); font-weight: 600;">كود شاشة</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="nav-btn nav-btn-primary" onclick="copyAllCodes()" style="padding: 12px 22px; font-size: 15px;">
+                    <i class="fa-solid fa-copy"></i>
+                    نسخ كل الأكواد دفعة واحدة
+                </button>
+
+                <button class="nav-btn nav-btn-ghost" onclick="downloadTxt()" style="padding: 12px 18px;">
+                    <i class="fa-solid fa-file-arrow-down"></i>
+                    تنزيل TXT
+                </button>
+
+                <button class="nav-btn nav-btn-ghost" onclick="clearAllPending()" style="padding: 12px 18px; color: var(--success); border-color: rgba(16, 185, 129, 0.4);">
+                    <i class="fa-solid fa-check-double"></i>
+                    تم التفعيل (تفريغ القائمة)
+                </button>
+            </div>
+        </div>
+
+        <!-- Codes Preview Box -->
+        <div class="glass-container" style="padding: 24px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 700;">
+                    <i class="fa-solid fa-code" style="color: var(--primary); margin-left: 6px;"></i>
+                    الأكواد الحالية (كل كود في سطر - يمكنك النسخ مباشرة من هنا):
+                </h3>
+                <span style="font-size: 12px; color: var(--text-muted);" id="refreshStatus">
+                    <i class="fa-solid fa-arrows-rotate fa-spin"></i> تحديث تلقائي كل 5ث
+                </span>
+            </div>
+
+            <textarea id="codesTextarea" class="codes-textarea" placeholder="لا توجد أكواد مجمعة حالياً... بمجرد أن يرسل الزبون كود شاشته سيظهر هنا فوراً!" readonly></textarea>
+        </div>
+
+        <!-- Recent Table -->
+        <div class="glass-container" style="padding: 24px;">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 14px;">
+                <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary); margin-left: 6px;"></i>
+                قائمة الأكواد وتوقيت إرسالها
+            </h3>
+
+            <div style="overflow-x: auto;">
+                <table class="custom-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>كود الشاشة</th>
+                            <th>وقت الإرسال</th>
+                            <th style="text-align: center;">حذف</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 25px; color: var(--text-muted);">
+                                لا توجد أكواد حالياً
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script>
+        let previousCount = 0;
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            let icon = type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation';
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        async function fetchCodes() {
+            try {
+                const res = await fetch('/api/admin/codes');
+                const data = await res.json();
+
+                if (res.ok && data.status === 'success') {
+                    document.getElementById('codesCount').innerText = data.count;
+                    document.getElementById('codesTextarea').value = data.codes_text;
+
+                    // Sound alert on new codes
+                    if (data.count > previousCount && previousCount !== 0) {
+                        playDing();
+                        showToast(`وصلك ${data.count - previousCount} كود جديد الآن!`, 'success');
+                    }
+                    previousCount = data.count;
+
+                    // Render table
+                    const tbody = document.getElementById('tableBody');
+                    if (data.items.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 25px; color: var(--text-muted);">لا توجد أكواد في القائمة حالياً.</td></tr>';
+                    } else {
+                        let html = '';
+                        data.items.forEach((item, index) => {
+                            html += `
+                                <tr>
+                                    <td style="color: var(--text-muted); font-size: 13px;">${index + 1}</td>
+                                    <td>
+                                        <span class="code-cell" style="font-size: 15px;">
+                                            ${item.code}
+                                            <button class="btn-mini-copy" onclick="copyCode('${item.code}')" title="نسخ"><i class="fa-solid fa-copy"></i></button>
+                                        </span>
+                                    </td>
+                                    <td style="color: var(--text-secondary); font-size: 13px;">${item.time}</td>
+                                    <td style="text-align: center;">
+                                        <button class="btn-row-action delete" onclick="deleteCode(${item.id})" title="حذف">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        tbody.innerHTML = html;
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function copyAllCodes() {
+            const textarea = document.getElementById('codesTextarea');
+            const text = textarea.value.trim();
+
+            if (!text) {
+                showToast('القائمة فارغة! لا توجد أكواد لنسخها.', 'error');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(text);
+                const count = document.getElementById('codesCount').innerText;
+                showToast(`تم نسخ ${count} كود بالكامل إلى الحافظة بنجاح!`, 'success');
+            } catch (e) {
+                textarea.select();
+                document.execCommand('copy');
+                showToast('تم نسخ الأكواد!', 'success');
+            }
+        }
+
+        async function copyCode(code) {
+            await navigator.clipboard.writeText(code);
+            showToast(`تم نسخ: ${code}`, 'success');
+        }
+
+        function downloadTxt() {
+            window.open('/api/admin/download-txt', '_blank');
+        }
+
+        async function clearAllPending() {
+            const count = document.getElementById('codesCount').innerText;
+            if (count === '0') {
+                showToast('القائمة فارغة بالفعل.', 'info');
+                return;
+            }
+
+            if (!confirm(`هل أنت متأكد من تفعيل وتفريغ القائمة (${count} كود)؟`)) return;
+
+            try {
+                const res = await fetch('/api/admin/mark-activated', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(data.message, 'success');
+                    fetchCodes();
+                }
+            } catch (e) {
+                showToast('فشل التفريغ.', 'error');
+            }
+        }
+
+        async function deleteCode(id) {
+            try {
+                await fetch(`/api/admin/delete/${id}`, { method: 'DELETE' });
+                showToast('تم حذف الكود.', 'info');
+                fetchCodes();
+            } catch (e) {
+                showToast('فشل الحذف.', 'error');
+            }
+        }
+
+        function playDing() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.35);
+            } catch (e) {}
+        }
+
+        // Auto fetch every 5 seconds
+        fetchCodes();
+        setInterval(fetchCodes, 5000);
+    </script>
+</body>
+</html>

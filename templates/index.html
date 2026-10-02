@@ -1,0 +1,177 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفعيل كود الشاشة</title>
+    <link rel="stylesheet" href="/static/css/portal.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .simple-hero {
+            max-width: 540px;
+            margin: 60px auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+        .big-code-box {
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: 2px;
+            font-weight: 800;
+            padding: 18px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid var(--primary);
+            border-radius: 14px;
+            color: #00f2fe;
+            box-shadow: 0 0 25px rgba(0, 210, 255, 0.2);
+            direction: ltr;
+        }
+        .big-code-box:focus {
+            box-shadow: 0 0 35px rgba(0, 210, 255, 0.4);
+            border-color: #38bdf8;
+        }
+        .submit-btn-huge {
+            width: 100%;
+            padding: 18px;
+            font-size: 20px;
+            font-weight: 800;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 25px rgba(0, 210, 255, 0.4);
+            transition: all 0.3s ease;
+            margin-top: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .submit-btn-huge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.5);
+        }
+        .success-box {
+            display: none;
+            margin-top: 24px;
+            padding: 24px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 16px;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <a href="/" class="brand">
+            <div class="brand-icon">
+                <i class="fa-solid fa-tv"></i>
+            </div>
+            <div class="brand-text">
+                <h1>تفعيل كود الشاشة</h1>
+                <p>Smart Screen Activation</p>
+            </div>
+        </a>
+        <a href="/admin" class="nav-btn nav-btn-ghost" style="font-size: 13px;">
+            <i class="fa-solid fa-lock"></i>
+            لوحة الإدارة
+        </a>
+    </header>
+
+    <div class="simple-hero">
+        <div style="width: 70px; height: 70px; background: rgba(0, 210, 255, 0.1); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: var(--primary); font-size: 32px; box-shadow: 0 4px 20px var(--primary-glow);">
+            <i class="fa-solid fa-tv"></i>
+        </div>
+
+        <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 10px;">ضع كود شاشتك هنا</h2>
+        <p style="color: var(--text-secondary); font-size: 15px; margin-bottom: 28px;">
+            الصق كود التفعيل أو الماك أدرس الظاهر على شاشة التلفاز وسيتم تفعيله فوراً
+        </p>
+
+        <form id="codeForm" onsubmit="submitOnlyCode(event)" class="glass-container" style="padding: 28px;">
+            <input type="text" id="screenCodeInput" class="form-input big-code-box" placeholder="مثال: 00:1A:79:XX أو ABCD123" required autocomplete="off" autofocus>
+            
+            <button type="submit" id="submitBtn" class="submit-btn-huge">
+                <i class="fa-solid fa-bolt"></i>
+                إرسال الكود للتفعيل
+            </button>
+        </form>
+
+        <div id="successBox" class="success-box">
+            <div style="font-size: 40px; color: #10b981; margin-bottom: 10px;">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h3 style="font-size: 20px; color: #fff; margin-bottom: 6px;">تم إرسال كودك بنجاح!</h3>
+            <p id="successMsg" style="color: #94a3b8; font-size: 14px; margin-bottom: 16px;">
+                تم تسجيل الكود وسيتم تفعيله حالاً.
+            </p>
+            <button class="nav-btn nav-btn-ghost" style="padding: 8px 18px;" onclick="resetForm()">
+                <i class="fa-solid fa-plus"></i> إرسال كود شاشة آخر
+            </button>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script>
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            let icon = type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation';
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        async function submitOnlyCode(e) {
+            e.preventDefault();
+            const input = document.getElementById('screenCodeInput');
+            const code = input.value.trim().toUpperCase();
+            const btn = document.getElementById('submitBtn');
+
+            if (!code) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
+
+            try {
+                const res = await fetch('/api/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ screen_code: code })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.status === 'success') {
+                    document.getElementById('codeForm').style.display = 'none';
+                    document.getElementById('successBox').style.display = 'block';
+                    document.getElementById('successMsg').innerText = `تم تسجيل الكود (${code}) بنجاح وفي انتظار التفعيل!`;
+                    showToast('تم إرسال الكود بنجاح!', 'success');
+                } else {
+                    showToast(data.message || 'حدث خطأ أثناء الإرسال', 'error');
+                }
+            } catch (err) {
+                showToast('تعذر الاتصال بالسيرفر.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-bolt"></i> إرسال الكود للتفعيل';
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('codeForm').reset();
+            document.getElementById('codeForm').style.display = 'block';
+            document.getElementById('successBox').style.display = 'none';
+            document.getElementById('screenCodeInput').focus();
+        }
+    </script>
+</body>
+</html>
